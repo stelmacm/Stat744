@@ -1,10 +1,11 @@
-Assignment 1
+---
+title: "Assignment2"
+output:
+  pdf_document: default
+  html_document: default
+---
 
-Martin Stelmach
-400010262
-------------------------
-
-Describing the graph linked in Dr. Bolkers website:
+### Describing the graph:
 
 I think that the graphic is trying to answer the question of what was the population of the various diseases before and after a vaccine
 was created and mandated and how did these change over time. I believe that was not the authors only question, as they also wanted to 
