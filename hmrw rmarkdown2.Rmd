@@ -8,6 +8,16 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+Please don't put spaces in file names. Underscores `_` are better than the auto-generated dashes.
+
+Well-explained, visually bold. Good job explaining how you ordered the diseases (although I can't really make sense of the code).
+
+I like the idea of area, or of a free y-axis, but I think you have to choose one. The suggestiveness of area is misleading when combined with the free scale, in my opinion.
+
+It doesn't look like you show when the vaccination program started?
+
+JD: Grade 2/3 (Good)
+
 ## Examining Jia You's Online graphic
 
 I believe the graphic is trying to answer the question of "What are the infected population of the given disease and how does that population change after having introduced and implemented a vaccine for the given disease?". I believe the focus of this graph is to demonstrate that the infected population shrinks immensely after a vaccine is created. I believe the author also wanted to show a ressurgence of the diseases as of the recent trend of antivaxxers. The graphic Jia You's used is a good graphic for the question posed because it is easy to determine when each disease started and when its respective population dynamics changed by examining the size of the shape. It is also very easy to see key dates due to colour differentiation of certain dates. One prominent issue with the graph is the difficulty of viewing the smaller infected populations on the graph. For example, Mumps begins to make a resurgence in later years however, on the graph it looks like the disease is completely erradicated before it shows up again on the graph. 
