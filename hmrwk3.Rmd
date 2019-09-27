@@ -1,0 +1,138 @@
+---
+title: "hw3"
+author: "Martin Stelmach"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The Table
+
+The table I used was from the McCallum paper found in the course website. The raw data was found on Dr. Bolkers website for easier linkage into this code. The table itself is very complicated and contains many abbreviated diseases that make little sense without a legend.
+The table also includes alot of extra variables such as MetCode which is similar to ID of the given item. Another unimportant column is the Sampler column which contains only POCIS in every row; simply adding to confusion of the table.
+
+## My interpretation
+```{r drugs}
+library(tidyverse)
+library(plyr)
+library(ggthemes)
+
+#Also used drugnames CSV to get full names from abbrevations
+data <- readr::read_csv("https://raw.githubusercontent.com/bbolker/stat744/master/data/POCIS_Raw_McCallum.csv")
+
+#first 3 columns dont really have to be there for a graph
+data2 <- data[ , 4:28]
+
+#head(data2)
+
+#Was going to use melt but had some trouble and found gather in the example so used that. Seemed to work
+data3 <- data2 %>%
+  gather(key = "Drugs", value = "value", 2:25)
+#data3
+
+#Lets call things by their real name
+#Imagine knowing a smarter way to do this 
+data3$Drugs <- revalue(data3$Drugs, c("CFN" = "Caffine", "SUC" = "Sucralose", "TMP" = "Trimethoprim", 
+                      "SMZ" = "Sulfamethoxazole", "CBZ" = "Carbamazepine", "ACM" = "Acetaminophen",
+                      "IBP"="Ibuprofen", "GEM" = "Gemfibrozil", "NPX" = "Naproxen", "TCS" = "Triclosan",
+                      "E1" = "Estrone (E1)", "E2" = "Estrone (E2)", "ADS" = "Androstenedione", "TST" = "Testosterone",
+                      "VLF" = "Venlafaxine", "o-dm-VLF" = "O-dm-venlafaxine", "n-dm-VLF" = "N-dm-venlafaxine",
+                      "SRT" = "Sertraline", "dm-SRT" = "dm-sertraline", "CIT" = "Citalopram", "FLX"= "Fluoxetine",
+                      "ATN" = "Atenolol", "MTP" = "Metoprolol", "PPN" = "Propanolol"))
+
+#very weird that if you run this line of code more than once without cleaing you get an error
+
+```
+
+In the code above I have done my data manipulation. I took the table and only read the important columns. After this I used the gather funcion to put all the data into 3 columns that contain the Site, the abbreaviated drug name and the value of the drug from the given site. This will allow easier data to graph and allow us to have an easier set to graph.
+Following this, I renamed all the abbreviations to their respective drug names. Although this worked it seems inaffective and could probably be improved. I played around with it in several ways because I also wanted to get drug catagories.
+I tried a lookup function where it would match appropriately however I had some trouble with returned values of Na. Unsure why but variables such as "o-dm-VLF" and several others failed to match. 
+
+```{r graph1}
+#first graph is a stacked bar graph
+#work on colour scales
+g0 <- ggplot(data3, aes(x=Site, y = value, fill = Drugs)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Concentration of drugs per site",
+       x = "Site",
+       y = "Concentration in Units (ng/L)") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "cornsilk"),
+        plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        panel.grid.major = element_line(colour = "gray87"),
+        panel.grid.minor = element_line(colour = "gray87"))
+
+```
+```{r graph, echo=FALSE}
+g0
+```
+
+This was a first attempt at a graph. It is a stacked bar graph per site. I like the idea of sorting per site however it is incredibly difficult to differentiate the drugs between one another due to the colour scale shifting so minimally. An alternative is to use a cold colour such as grey to be able to differentiate the colours from the background easier.
+
+```{r graph2 }
+g1 <- ggplot(data3, aes(x=Site, y = value, fill = Drugs)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Concentration of drugs per site",
+       x = "Site",
+       y = "Concentration in Units (ng/L)") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "gray"),
+        plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        panel.grid.major = element_line(colour = "gray87"),
+        panel.grid.minor = element_line(colour = "gray87"))
+```
+```{r graph7, echo=FALSE}
+g1
+```
+
+An intruiging premis would be to put the concentrations as lolipop charts similar to the bar chart. I graphed the following one ontop of another again to see how the chart looks.
+It looks okay but still clustered and difficult visibility. The colour scheme is still a problem for points that are really close. I also chose a free y axis in order to allow an easier view for the smaller concentration points.
+
+
+```{r graph3 }
+g2 <- ggplot(data3, aes(x= Site, y = value, colour = Drugs)) + 
+  geom_lollipop() +
+  labs(title = "Concentration of drugs per site",
+       x = "Site",
+       y = "Concentration in Units (ng/L)") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "gray"),
+        plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        panel.grid.major = element_line(colour = "gray87"),
+        panel.grid.minor = element_line(colour = "gray87"))+
+  facet_wrap(~Site, scales = "free")
+```
+```{r graph6, echo=FALSE}
+g2
+```
+
+This being said I think this is the right direction to go towards.
+
+I like the idea of lolipop and I think that is most suitable for this dataset.
+
+```{r graph4 }
+g3 <- ggplot(data3, aes(x = Drugs, y = value, colour = Site)) +
+  geom_lollipop() +
+  labs(title = "Concentration of drugs per site",
+       x = "Site",
+       y = "Concentration in Units (ng/L)") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "white"),
+        plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        panel.grid.major = element_line(colour = "gray87"),
+        panel.grid.minor = element_line(colour = "gray87"))+
+  coord_flip()
+```
+```{r graph5, echo=FALSE}
+g3
+```
+
+coord_flip allows the graph to look much nicer and more presentable. A problem with this graph is sucralose and its length being aggressively longer than all the other drugs. I feel as though everything else is scaled properly. I also like the grid lines because it is easier to see where data points end off. Another improvement on this would be to group all of them in their drug catagories.
+
+I like the idea of different colours to represent different sites and I think this would look excellent if the sucralos was to scale with the rest of the values.
