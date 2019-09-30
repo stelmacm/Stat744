@@ -10,17 +10,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## The Table
 
-The table I used was from the McCallum paper found in the course website. The raw data was found on Dr. Bolkers website for easier linkage into this code. The table itself is very complicated and contains many abbreviated diseases that make little sense without a legend.
-The table also includes alot of extra variables such as MetCode which is similar to ID of the given item. Another unimportant column is the Sampler column which contains only POCIS in every row; simply adding to confusion of the table.
+The table I used was from the McCallum paper found in the course website. The raw data was found on Dr. Bolker's website for easier linkage into this code. The table itself is very complicated and contains many abbreviated diseases that make little sense without a legend.
+The table also includes a lot of extra variables such as MetCode which is similar to ID of the given item. Another unimportant column is the Sampler column which contains only POCIS in every row; simply adding to confusion of the table.
 
 ## My interpretation
 ```{r drugs}
 library(tidyverse)
 library(plyr)
 library(ggthemes)
+library(ggalt) ## BMB: need this for geom_lollipop!
 
 #Also used drugnames CSV to get full names from abbrevations
 data <- readr::read_csv("https://raw.githubusercontent.com/bbolker/stat744/master/data/POCIS_Raw_McCallum.csv")
+## BMB: good idea to cache this locally
 
 #first 3 columns dont really have to be there for a graph
 data2 <- data[ , 4:28]
@@ -33,8 +35,10 @@ data3 <- data2 %>%
 #data3
 
 #Lets call things by their real name
-#Imagine knowing a smarter way to do this 
-data3$Drugs <- revalue(data3$Drugs, c("CFN" = "Caffine", "SUC" = "Sucralose", "TMP" = "Trimethoprim", 
+##Imagine knowing a smarter way to do this
+## BMB: you can get this information from 'drugnames.csv' in the
+##  course repo and merge() or full_join() ...
+data3$Drugs <- revalue(data3$Drugs, c("CFN" = "Caffeine", "SUC" = "Sucralose", "TMP" = "Trimethoprim", 
                       "SMZ" = "Sulfamethoxazole", "CBZ" = "Carbamazepine", "ACM" = "Acetaminophen",
                       "IBP"="Ibuprofen", "GEM" = "Gemfibrozil", "NPX" = "Naproxen", "TCS" = "Triclosan",
                       "E1" = "Estrone (E1)", "E2" = "Estrone (E2)", "ADS" = "Androstenedione", "TST" = "Testosterone",
@@ -42,13 +46,17 @@ data3$Drugs <- revalue(data3$Drugs, c("CFN" = "Caffine", "SUC" = "Sucralose", "T
                       "SRT" = "Sertraline", "dm-SRT" = "dm-sertraline", "CIT" = "Citalopram", "FLX"= "Fluoxetine",
                       "ATN" = "Atenolol", "MTP" = "Metoprolol", "PPN" = "Propanolol"))
 
-#very weird that if you run this line of code more than once without cleaing you get an error
+##very weird that if you run this line of code more than once without cleaning you get an error
+## BMB: I think that's because you're trying to rename with names that
+##  don't exist any more ...
 
 ```
 
-In the code above I have done my data manipulation. I took the table and only read the important columns. After this I used the gather funcion to put all the data into 3 columns that contain the Site, the abbreaviated drug name and the value of the drug from the given site. This will allow easier data to graph and allow us to have an easier set to graph.
-Following this, I renamed all the abbreviations to their respective drug names. Although this worked it seems inaffective and could probably be improved. I played around with it in several ways because I also wanted to get drug catagories.
-I tried a lookup function where it would match appropriately however I had some trouble with returned values of Na. Unsure why but variables such as "o-dm-VLF" and several others failed to match. 
+In the code above I have done my data manipulation. I took the table and only read the important columns. After this I used the gather funcion to put all the data into 3 columns that contain the Site, the abbreviated drug name and the value of the drug from the given site. This will allow easier data to graph and allow us to have an easier set to graph.
+Following this, I renamed all the abbreviations to their respective drug names. Although this worked it seems inaffective and could probably be improved. I played around with it in several ways because I also wanted to get drug categories.
+I tried a lookup function where it would match appropriately however I had some trouble with returned values of NA. Unsure why but variables such as "o-dm-VLF" and several others failed to match. 
+
+**BMB**: may be having troubles with variables with dashes in them because these are not valid R variable names (give trouble in some contexts)
 
 ```{r graph1}
 #first graph is a stacked bar graph
@@ -72,6 +80,8 @@ g0
 
 This was a first attempt at a graph. It is a stacked bar graph per site. I like the idea of sorting per site however it is incredibly difficult to differentiate the drugs between one another due to the colour scale shifting so minimally. An alternative is to use a cold colour such as grey to be able to differentiate the colours from the background easier.
 
+**BMB**: also, why alphabetical?  Scale units to micrograms/liter?
+
 ```{r graph2 }
 g1 <- ggplot(data3, aes(x=Site, y = value, fill = Drugs)) +
   geom_bar(stat = "identity") +
@@ -89,7 +99,7 @@ g1 <- ggplot(data3, aes(x=Site, y = value, fill = Drugs)) +
 g1
 ```
 
-An intruiging premis would be to put the concentrations as lolipop charts similar to the bar chart. I graphed the following one ontop of another again to see how the chart looks.
+An intriguing premise would be to put the concentrations as lollipop charts similar to the bar chart. I graphed the following one on top of another again to see how the chart looks.
 It looks okay but still clustered and difficult visibility. The colour scheme is still a problem for points that are really close. I also chose a free y axis in order to allow an easier view for the smaller concentration points.
 
 
@@ -112,8 +122,9 @@ g2
 ```
 
 This being said I think this is the right direction to go towards.
+**BMB**: Hmm, I think it's actually harder to see this way ...
 
-I like the idea of lolipop and I think that is most suitable for this dataset.
+I like the idea of lollipop and I think that is most suitable for this dataset.
 
 ```{r graph4 }
 g3 <- ggplot(data3, aes(x = Drugs, y = value, colour = Site)) +
@@ -133,6 +144,10 @@ g3 <- ggplot(data3, aes(x = Drugs, y = value, colour = Site)) +
 g3
 ```
 
-coord_flip allows the graph to look much nicer and more presentable. A problem with this graph is sucralose and its length being aggressively longer than all the other drugs. I feel as though everything else is scaled properly. I also like the grid lines because it is easier to see where data points end off. Another improvement on this would be to group all of them in their drug catagories.
+`coord_flip` allows the graph to look much nicer and more presentable. A problem with this graph is sucralose and its length being aggressively longer than all the other drugs. I feel as though everything else is scaled properly. I also like the grid lines because it is easier to see where data points end off. Another improvement on this would be to group all of them in their drug catagories.
 
-I like the idea of different colours to represent different sites and I think this would look excellent if the sucralos was to scale with the rest of the values.
+I like the idea of different colours to represent different sites and I think this would look excellent if the sucralose was to scale with the rest of the values.
+
+**BMB**: still alphabetical. Log scale?  Hard to make between-site comparisons ...  Good effort, score = 2.25
+
+
