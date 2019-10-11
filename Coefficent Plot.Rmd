@@ -1,0 +1,129 @@
+---
+title: "Coefficient Plot"
+author: "Martin Stelmach"
+date: ""
+output: html_document
+---
+## Coefficient Plot of Wine Types
+
+```{r setup}
+library(ggplot2)
+library(directlabels)
+library(broom)
+library(broom.mixed)
+library(dotwhisker)
+library(ggstance)
+library(tidyverse)
+library(dplyr)
+library(rattle)
+data("wine")
+```
+
+## Creating the Graph
+I began by sorting the data into a linear model with Alcohol being a response variable for serveral other factors and I made a simple dot and whisker plot of the model. 
+
+
+```{r cars}
+#we want type, alcohol, dilution, flavanoids, nonflavanoids, maybe alcalinity as well
+gg0 <- lm(Alcohol ~ Dilution + Flavanoids + Nonflavanoids + Alcalinity, data = wine)
+dwplot(gg0)
+```
+
+## Improvements
+When first creating the graph I realized that many things such as title and axis and all the things that make graphs look nice.
+
+
+```{r pressure, echo=FALSE}
+gg1 <- gg0 
+#this is kind of pointless but I have a thing where I dont like 0's in my variable names. This could have been avoided right from the beginning but oh well.
+dwplot(gg1, vline = geom_vline(xintercept = 0, linetype = 2)) %>%
+  relabel_predictors(Alcalinity = "Alkalinity") + #sorry im that guy who needs to change spelling
+  xlab("Coefficient Estimate") + ylab("") +
+  ggtitle("Wine Alcohol by Wine Type")
+```
+
+This looks a lot nicer. Has things like labels and correct variable names. Now I want to do this but for several types of wines. So in order to do this we will use the dplyr package to seperate the wine by type and use them in the same model as comparisons to one another. 
+```{r wine}
+by_type <- wine %>% 
+  group_by(Type) %>%
+  do(tidy(lm(Alcohol ~ Dilution + Flavanoids + Nonflavanoids + Alcalinity, data = .))) %>%
+  rename(model=Type) %>%
+  relabel_predictors(Alcalinity = "Alkalinity")
+
+by_type
+```
+
+This works successfully and now we can plot the model by each respective type of wine. We use the gray scale to make it visible for everyone. Although by colour would probably be the best way to do this graph, I want to see if I can make one that stands out in a gray scale. With some research on the internet, colour gray60 and gray80 are the best for grid patterns and vertical lines.
+
+```{r vino}
+dwplot(by_type,
+       vline = geom_vline(xintercept = 0, colour = "grey60", linetype = 2)) +
+  xlab("Coefficient Estimate") + ylab("") +
+  ggtitle("Wine Alcohol by Wine Type") +
+  theme(plot.title = element_text(face="bold"),
+        legend.position = c(0.75, 0.62),
+        legend.justification = c(0, 0),
+        legend.background = element_rect(colour="grey80"),
+        legend.title.align = .5) +
+  scale_colour_grey(name = "Wine type",
+                    breaks = c( 1, 2, 3),
+                    labels = c("Type 1", "Type 2", "Type 3"))
+```
+
+
+This is the same graph with a monochromatic grey scale so that they are viewable for everyone as well as shapes to differentiate the different varieties of wine. I like these graphs and I think they are appropriate for the model. 
+
+```{r vino1}
+#So jonathan can see
+dwplot(by_type,
+       vline = geom_vline(xintercept = 0, colour = "grey60",linetype = 2),
+       dot_args = list(aes(shape = model)),
+       whisker_args = list(aes(linetype = model)))+
+  xlab("Coefficient Estimate") + ylab("") +
+  theme_bw()+
+  ggtitle("Wine Alcohol by Wine Type") +
+  theme(plot.title = element_text(face="bold"),
+        legend.position = c(0.8, 0.7),
+        legend.justification = c(0, 0),
+        legend.background = element_rect(colour="grey80"),
+        legend.title.align = .5) +
+  scale_colour_grey(name = "Wine Type", 
+                    breaks = c(1, 2, 3),
+                    labels = c("Type 1", "Type 2", "Type 3")) +
+  scale_shape_discrete(name = "Wine Type",
+              breaks = c(1,2,3),
+              labels = c("Type 1", "Type 2", "Type 3"))
+```
+
+Each line is also using different line types which I found particularly nice. Easier to differentiate of a black and white scale. If it was a colour scale I would have used solid colours but I think that it helps with the black and white scale. An arguement could be made that the Alkailinty is difficult to view, to which I agree and obviously the solution is to use a colour scale however I wanted to challenge myself and try and find solutions to this problem, hence the use of shapes and line types and the use of a white background. 
+I tried to make a the x axis something different but they are all different units or measurement and I did not really know how to normalize these into a single scale. This being said we can show there is a divide in the two groups
+```{r manz}
+brackets <- list(c("Phenolics", "Flavanoids", "Nonflavanoids"), 
+                 c("PH factors", "Alkalinity", "Dilution"))
+```
+These brackets are how I will be dividing the classes of variables.
+
+## Final Product
+```{r yes}
+{dwplot(by_type,
+       vline = geom_vline(xintercept = 0, colour = "grey60",linetype = 2),
+       dot_args = list(aes(shape = model)),
+       whisker_args = list(aes(linetype = model)))+
+  xlab("Coefficient Estimate") + ylab("") +
+  theme_bw()+
+  ggtitle("Wine Alcohol by Wine Type") +
+  theme(plot.title = element_text(face="bold"),
+        legend.position = c(0.78, 0.7),
+        legend.justification = c(0, 0),
+        legend.background = element_rect(colour="grey80"),
+        legend.title.align = .5) +
+  scale_colour_grey(name = "Wine Type", 
+                    breaks = c(1, 2, 3),
+                    labels = c("Type 1", "Type 2", "Type 3")) +
+  scale_shape_discrete(name = "Wine Type",
+              breaks = c(1,2,3),
+              labels = c("Type 1", "Type 2", "Type 3"))} %>%
+  add_brackets(brackets)
+```
+
+I notice all my graphs are different sizes hence my legends are in different places. I dont know how to change that but that would be something I would work out in the future. 
