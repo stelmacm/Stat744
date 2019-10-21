@@ -127,3 +127,7 @@ These brackets are how I will be dividing the classes of variables.
 ```
 
 I notice all my graphs are different sizes hence my legends are in different places. I dont know how to change that but that would be something I would work out in the future. 
+
+JD: This is a nice effort to improve visualization design without throwing the kitchen sink at us. I wonder if it would have been better to not mess with linetypes. It would definitely have been better to flip the legend to match the ordering of the lines.
+
+Grade 2.1/3 A little better than good
