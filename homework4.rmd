@@ -4,11 +4,16 @@ author: "Martin Stelmach"
 date: "25/10/2019"
 output: pdf_document
 ---
+
 ## Data story
 
 So recently Canadian citizens voted in the Canadian election and there were many graphics flowing around on the screen of various ridings and stuff and that caught my eye. I thought a bar graph to show number how many people voted as percentages was not very intuitive to compare. The data was taken from https://www.elections.ca/content.aspx?section=res&dir=rep/off/42gedata&document=summary&lang=e 
-Unfortunately the because the data is so recent there is alot of errors with it and many times has been uploaded several times due to recounts and other reasons.
-A problem I had was that the french descriptions of some datasets could not be read because the accents and other non english letters came out as symbols and made stuff unusable. Even when trying to manually go through riding data, there were many problems with gerrymandering which we will see as we continue. I assume this is because this is the day after the elections and it is never perfect. 
+Unfortunately the because the data is so recent there is a lot of errors with it and many times has been uploaded several times due to recounts and other reasons.
+A problem I had was that the French descriptions of some datasets could not be read because the accents and other non english letters came out as symbols and made stuff unusable. 
+
+**BMB: this is admittedly a pain but there are strategies for dealing with it if you want to badly enough (messing about with encodings etc.)**
+
+Even when trying to manually go through riding data, there were many problems with gerrymandering which we will see as we continue. I assume this is because this is the day after the elections and it is never perfect. 
 
 ## Thought Process
 ```{r setup, include=FALSE}
@@ -17,17 +22,22 @@ library(broom)
 library(broom.mixed)
 library(mapcan)
 library(tidyverse)
-mydata <- read.csv("voterstuff.csv",header=TRUE,stringsAsFactors = FALSE,strip.white = TRUE,sep = ',')
+## BMB: generally better to leave default values as implicit
+mydata <- read.csv("data/voterstuff.csv",stringsAsFactors = FALSE)
+## BMB: try to select by name, not number.
+## could also tidyverse this
 voterdata2019 <- mydata[,-c(5,7,9)]
 population2019 <- mydata[1:2]
 ```
 
-Unsure why I seperated the data so many times but I remember have many bugs later down and this seemed to fix them. I also was unable to make this as a knitr function readr to https://raw.githubusercontent.com/stelmacm/Stat744/master/data/voterstuff.csv but unfortunately there were errors with unable being to read the variable names. 
+Unsure why I separated the data so many times but I remember have many bugs later down and this seemed to fix them. 
+**BMB: OK (I was wondering)**
+I also was unable to make this as a knitr function readr to https://raw.githubusercontent.com/stelmacm/Stat744/master/data/voterstuff.csv but unfortunately there were errors with being unable to read the variable names. 
+
 ## Making the map and things
 
 
 ```{r cars}
-
 canadamap <- mapcan(boundaries = province,
                  type = standard) %>%
   ggplot(aes(x = long, y = lat, group = group))+
@@ -40,7 +50,7 @@ canadamap <- mapcan(boundaries = province,
 canadamap
 ```
 
-Basic map of Canada. I like it. Got rid of grid lines. Attempted to use theme_minimal() and did all the panel.border, panel.background and panel.grid stuff to make a clean white background but found that the package comes with a theme_mapcan() that just does that for you. Now I was simply playing around with what I wanted to plot in the following because I didnt have too much selection that worked due to data being sparse. My goal was ultimately voter turn out (which I got).
+Basic map of Canada. I like it. Got rid of grid lines. Attempted to use theme_minimal() and did all the panel.border, panel.background and panel.grid stuff to make a clean white background but found that the package comes with a theme_mapcan() that just does that for you. Now I was simply playing around with what I wanted to plot in the following because I didn't have too much selection that worked due to data being sparse. My goal was ultimately voter turn out (which I got).
 
 
 ```{r pressure}
@@ -58,12 +68,11 @@ populationsofcanada <- inner_join(mapofcanada,
   coord_fixed() +
   scale_fill_viridis_c(name = "Population") +
   theme_mapcan() 
-  
 ```
 
-Kinda liked it for a start. Thought it was a good graph to build off of and add more intracasies/complexities. Didnt like things like the scale or even how the data just looked the same on the map. 
+Kinda liked it for a start. Thought it was a good graph to build off of and add more intricacies/complexities. Didn't like things like the scale or even how the data just looked the same on the map. 
 
-```{r graph boi}
+```{r graph_boi}
 #I can do other things too!!
 
 ballotstuff <- inner_join(mapofcanada,
@@ -77,14 +86,12 @@ ballotstuff <- inner_join(mapofcanada,
   theme_mapcan() +
   scale_fill_viridis_c(name = "Total Ballots Cast") +
   ggtitle("Canadian Population by Province")
-
 ```
 
-I still dont like the scale but thats also because I dont like what I am graphing. 
+I still don't like the scale but that's also because I don't like what I am graphing. 
 I think it will be better as a percentage.
 
 ```{r map}
-
 percentagevotes <- inner_join(mapofcanada,
                              mydata,
                              by = c("pr_english" = "Province"))
@@ -92,17 +99,22 @@ percentagevotes <- inner_join(mapofcanada,
 
 #playing around with colour scales for jonathan to see. 
  
-  ggplot(percentagevotes, aes(x = long, y = lat, group = group, fill = Percentage.of.Voter.Turnout)) +
+ggplot(percentagevotes, aes(x = long, y = lat, group = group, fill = Percentage.of.Voter.Turnout)) +
   ggtitle("Canadian Population by Province") +
   geom_polygon() +
   coord_fixed() +
   theme_mapcan() +
-  scale_fill_gradient(low = "orange", high = "navy", guide = "colourbar", name = "Percentage of Voter Turn out")
-
+  scale_fill_gradient(low = "orange", high = "navy",
+                        guide = "colourbar", name = "Percentage of Voter Turn out")
 ```
 
+**BMB: viridis is supposed to be dichromat-friendly.  scale_fill_gradient does NOT necessarily create a perceptually uniform gradient. Also, most of the data fall right in the middle of the range. Also, any reason to use this gradient rather than e.g. something in RColorBrewer?**
 
-So its still kinda ugly with the scaling. Too many provinces look too alike. But that more so the data's fault??? I thought about logging the data but I dont think that would be fair to represent because the populations are so different for all the provinces. Ultimately it looked the same but that was my thought process.
+```{r}
+ggplot(mydata,aes(x=Percentage.of.Voter.Turnout))+geom_histogram(bins=10)
+```
+
+So its still kinda ugly with the scaling. Too many provinces look too alike. But that more so the data's fault??? **BMB: nice try** I thought about logging the data but I don't think that would be fair to represent because the populations are so different for all the provinces. Ultimately it looked the same but that was my thought process.
 
 ```{r log}
 logturnout <- log(percentagevotes$Percentage.of.Voter.Turnout)
@@ -116,12 +128,17 @@ logturnout <- log(percentagevotes$Percentage.of.Voter.Turnout)
   scale_fill_gradient(low = "orange", high = "navy", guide = "colourbar", name = "Percentage of Voter Turn out")
 ```
 
-I didnt really know what to make of the scale of even the fact that nothing changed. But I knew I wasnt using it so I ultimatley just chose to not do anything about it.
+**BMB: you need something more logit-like that spreads both ends more.**
+
+I didn't really know what to make of the scale of even the fact that nothing changed. But I knew I wasn't using it so I ultimately just chose to not do anything about it.
+
+**BMB: a cartogram would be an interesting solution.**
 
 ## Problems
-Now here is where things got tricky. 1 the data was taken down due to recounts and such. 2 there were many gerrymandering changes in this election ie. a whole new riding was impletemented for Oakville/Burlington North and several areas changed many of them got new riding codes which would not fit into the packages encodings.
 
-Here is what I would have done however. I would have examined ontario and done the thing.
+Now here is where things got tricky. (1) the data was taken down due to recounts and such. (2) there were many gerrymandering changes in this election ie. a whole new riding was implemented for Oakville/Burlington North and several areas changed many of them got new riding codes which would not fit into the packages encodings. **BMB: a riding change is not necessarily "gerrymandering". There is some burden of proof on you to show that a change actually leads to disproportionate results**
+
+Here is what I would have done however. I would have examined Ontario and done the thing.
 
 ```{r ont}
 #ontario voting
@@ -140,7 +157,9 @@ ont_ridings <- mapcan(boundaries = ridings,
   theme_mapcan() 
 
 ```
-#None of the following actually works all theorhetical 
+
+```{r eval=FALSE}
+#None of the following actually works all theoretical 
 ont_ridings <- inner_join(ont_results, ontariovotingdata, by = "riding_code")
 
 ont_riding_map <- ont_ridings %>%
@@ -151,12 +170,13 @@ ont_riding_map <- ont_ridings %>%
   theme_mapcan() +
   scale_fill_manual(name = "Winning party",
                     values = c("blue", "green", "red", "Orange")) 
-          
-No bloque of PPC party in ONT. 
+```
+
+No bloque or PPC party in ONT. 
 
 ## Old data set
 
-I found out that the package comes with the data for 2015 election. So decided to try out my theorhetical data with this. 
+I found out that the package comes with the data for 2015 election. So decided to try out my theoretical data with this. 
 ```{r jerry}
  ont_ridings <- mapcan(boundaries = ridings,
                        type = standard,
@@ -173,12 +193,12 @@ I found out that the package comes with the data for 2015 election. So decided t
     coord_fixed() +
     theme_mapcan() 
   
-  ont_riding_map +
-    scale_fill_manual(name = "Winning party",
+  ont_riding_map + scale_fill_manual(name = "Winning party",
                       values = c("red", "blue", "orange", "green")) 
 ```
 
-A very odd thing with this is that the map wont print unless the scale_fill_manual is on another line. Another is that the values must be in line with the data set that is given which I suppose makes sense and isnt a huge hassle since there are not that many parties. 
+A very odd thing with this is that the map won't print unless the `scale_fill_manual` is on another line **BMB: works for me ...**. Another is that the values must be in line with the data set that is given which I suppose makes sense and isn't a huge hassle since there are not that many parties. 
+**BMB: I think you could do this by also specifying `breaks` explicitly**
 
 ```{r riding}
 ont_riding_map +
@@ -187,10 +207,15 @@ ont_riding_map +
 ```
 This was the final map with the given 2015 election results.
 
-##Cleveland Thoughts
-These 2 graphs follow Clevelands hierarchy well. The Ontario one because the colour scale make it intuitive to which ridings allign with each party. One thing that could be criticized is the lack of information provided on how many ridings the party has won. The graphic does not do a good job of conveying how many ridings were actually won more so simply the area that was won. This would work well in the prairies where there are not as many ridings and it is alot more evident to see. A solution to this would be to make it interactive but I was unable to figure that out.
-On the Canada chart it is easier because there are fairly large area's that are filled. The provinces all had relatively similar voter turnouts so a large chunk of them represented looked fairly similar and were difficult to distinguish. 
-##Final thoughts
-As I submit this I cant help but think about the lack of bar graphs or any other graphs covered in class and I wonder if I focused too much on the story part ie info viz rather than data viz. Overall, I feel this was a very effective method of demomstrating the data. 
+**BMB: cartogram might be necessary here ...**
 
+## Cleveland Thoughts
 
+These two graphs follow Cleveland's hierarchy well. The Ontario one because the colour scale make it intuitive to which ridings align with each party. One thing that could be criticized is the lack of information provided on how many ridings the party has won. The graphic does not do a good job of conveying how many ridings were actually won more so simply the area that was won. This would work well in the prairies where there are not as many ridings and it is a lot more evident to see. A solution to this would be to make it interactive but I was unable to figure that out. **BMB: leaflet!**
+On the Canada chart it is easier because there are fairly large areas that are filled. The provinces all had relatively similar voter turnouts so a large chunk of them represented looked fairly similar and were difficult to distinguish. 
+
+## Final thoughts
+
+As I submit this I cant help but think about the lack of bar graphs or any other graphs covered in class and I wonder if I focused too much on the story part ie info viz rather than data viz. Overall, I feel this was a very effective method of demonstrating the data. 
+
+**BMB: I think infoviz rather than data viz is fine. On the other hand, I wasn't quite sure what story you were actually trying to tell here ... (score: 2)**
