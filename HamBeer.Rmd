@@ -1,0 +1,197 @@
+---
+title: "HamiltonBeer"
+author: "Martin Stelmach"
+date: "08/11/2019"
+output: html_document
+---
+
+```{r setup}
+library(ggmap)
+library(tidyverse)
+library(viridis)
+library(sf)
+library(geogrid)
+library(gganimate)
+library(RColorBrewer)
+library(htmlwidgets)
+if (!require(transformr,quietly=TRUE)) {
+  warning("animation example might not work; ",
+          "consider running ",
+          "'remotes::install_github(\"thomasp85/transformr'\")")
+}
+library(leaflet)
+
+library(plotly)
+#definitely more packages than needed
+```
+
+## General Idea
+
+I begin by apologized for this incomplete effort as it was an incredibly terrible week this week.
+That being said I spent the majority of the week working which means a good supply of bean juice from one of my favorite coffee shops, Phin coffee. They are a real coffee shop that actually sells flavoured coffee instead of coffee with some sort of sugar flavoring. While in there I noticed this interesting graphic,
+https://www.google.com/maps/uv?hl=en&pb=!1s0x882c9b7c4025ac89%3A0xb0984057f0dc98d4!3m1!7e115!4shttps%3A%2F%2Flh5.googleusercontent.com%2Fp%2FAF1QipPSP1YtFZvvv2ps3oUMn6pryhlmf2TCSQK0np8u%3Dw106-h160-k-no!5sphin%20coffee%20-%20Google%20Search!15sCAQ&imagekey=!1e10!2sAF1QipOt0HjbNl6cpwxyvarpWjc9-IKvlcCLmmdImkce&sa=X&ved=2ahUKEwj5nuHertnlAhVnhq0KHarjB9YQoiowI3oECAoQBg 
+This graphic shows different flavor profiles for coffee's as a sunburst plot. I thought this was really cool and thought it was cool how the staff work with it to find a bean that you like. (This isn't an ad I swear).
+
+I thought this could be a good method to solve mankind's longest problem; people dont know what they want.
+
+I thought a good problem that was kind of similar to coffee was figuring out what kind of drink you like and where you can get it. I began by creating a sunplot of types of flavor profiles of beers. 
+
+
+```{r cars}
+df <- data.frame(
+  ids = c(
+    "Fruity", "Floral", "Vegetal", "Spicy", "Heat<br>Induced","Biological", "Chemical","Taste","Texture", 
+    "Fruity - Citrus", "Berry", "Pip", "Tropical", "Artificial", "Fruity - Dried",
+    "Floral - Sweet<br>Blossom", "Floral - Savory<br>Blossom", 
+    "Vegetal - Fresh", "Cooked", "Dried", "Vegetal - Resinous",
+    "Spicy - Savory<br>Spice", "Sweet<br>Spice", "Nutty", "Spicy - Herbage",
+    "Heat<br>Induced - Carmelized", "Smoky", "Heat<br>Induced - Roasted",
+    "Biological - Baked<br>Goods", "Animal", "Lactic", "Acids", "Alcoholic", "Biological - Earthy",
+    "Chemical - Papery", "Sulfury", "Inky", "Solvent", "Phenolic", "Petroleum", "Chemical - Metallic",
+    "Taste - Bitter", "Sweet", "Sour", "Salty", "Umami", "Taste - Fatty", 
+    "Texture - Mouthfeel", "Body", "Texture - Foam",
+    "Biological - Lactic - In The Palms",
+    "Fruity - Berry - Berry Good" , "Fruity - Berry - Small Hours", "Fruity - Berry - Drift"
+    
+    
+  ),
+  labels = c(
+    "Fruity", "Floral", "Vegetal", "Spicy", "Heat<br>Induced","Biological", "Chemical","Taste","Texture", 
+    "Citrus", "Berry", "Pip", "Tropical", "Artificial", "Dried",
+    "Sweet<br>Blossom", "Savory<br>Blossom", 
+    "Fresh", "Cooked", "Dried", "Resinous",
+    "Savory<br>Spice", "Sweet<br>Spice", "Nutty", "Herbage",
+    "Carmelized", "Smoky", "Roasted",
+    "Baked<br>Goods", "Animal", "Lactic", "Acids", "Alcoholic", "Earthy",
+    "Papery", "Sulfury", "Inky", "Solvent", "Phenolic", "Petroleum", "Metallic",
+    "Bitter", "Sweet", "Sour", "Salty", "Umami", "Fatty", 
+    "Mouthfeel", "Body", "Foam",
+    "In The Palms",
+    "Berry Good","Small Hours", "Drift"
+    
+    
+   
+  ),
+  parents = c(
+    "", "", "", "", "", "", "", "", "" ,
+    "Fruity", "Fruity", "Fruity", "Fruity", "Fruity", "Fruity",
+    "Floral", "Floral",
+    "Vegetal", "Vegetal", "Vegetal", "Vegetal",
+    "Spicy", "Spicy", "Spicy", "Spicy",
+    "Heat<br>Induced", "Heat<br>Induced", "Heat<br>Induced", 
+    "Biological", "Biological", "Biological", "Biological", "Biological", "Biological",
+    "Chemical", "Chemical", "Chemical", "Chemical", "Chemical", "Chemical", "Chemical",
+    "Taste", "Taste", "Taste", "Taste", "Taste", "Taste",
+    "Texture", "Texture", "Texture",
+    "Lactic", "Berry","Berry" , "Berry"
+    
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+Again this was fairly late so it is not fully complete, I would have liked to add more flavours and results to the flavors and perhaps even more classifications ie is an IPA hoppy or piney or earthy ect. Try going searching up a sour beer in the sunplot. So click Fruity -> Berry and you are presented with several different drink options.
+
+```{r pressure}
+graph <- plot_ly(df, ids = ~ids, labels = ~labels, parents = ~parents, type = 'sunburst',maxdepth = 2)
+graph
+```
+
+#Further Idea
+
+This is kinda cool. You can click which kind of beers you like and now you can know what the name of the beers is. The problem is these beers have funky names and you would probably have to google them to figure out where to get them. 
+
+```{maps}
+companies <- data.frame(
+        Brewery = c("Grain and Grit" , "Fairweather", "Phoenix", "Merit"
+        ),
+        Beer = c("Small Hours", "Berry Good", "Drift", "French"
+        ),
+        lat = c(43.2567224, 43.2552477, 43.2629101, 43.2595079
+        ),
+        lon = c(-79.9316348, -79.9340011, -79.9233492, -79.8701866
+        ),
+        Type = c("Lactose", "Sour", "Sour", "Sour"
+        )
+        
+)
+```
+
+Unfortunately there is no data set for this. There is a beerworld API however it does not contain everything I would have wanted. So I just made a data frame. Again its very late so there is not much in it but the idea still holds (kinda). This data frame would also need alot more variables in it with regards to the path taken to getting to a given drink.
+
+```{map1}
+map1 <- qmplot(lon, lat, data = companies, 
+               maptype = "toner-lite",
+               ## for q* plots need to use I() for direct specifications
+               colour = I("red"),
+               size = I(1.5),
+               alpha=I(.3))
+map1
+
+```
+
+Similarly to what was done in class, a plot of locations is made with all the breweries in Hamilton and from there you can get a rough estimate of where there are close ones so you can just walk from one place to the other or some other visualization. 
+
+```{map2}
+get_mapzone <- function(data, latcol="lat", loncol="lon") {
+  lon <- na.omit(data[[loncol]])
+  lat <- na.omit(data[[latcol]])
+  return(c(left=min(lon),right=max(lon),bottom=min(lat),top=max(lat)))
+}
+
+beerarea <- get_mapzone(companies)            
+
+beer_map1 <- get_stamenmap(beerarea,zoom=13, maptype="toner-lite", 
+                              messaging=FALSE)
+
+(ggmap(beer_map1)
+  + geom_point(data=companies,colour="red",size=2,alpha=.9)
+)
+
+```
+
+This produces a simple map based on the boundaries of the points which is obviously unideal because we would like to see the area around our points. Below I will filter for Sour beers near McMaster. 
+
+
+```{map3}
+ham_beer <-
+  (companies
+   %>% filter(
+     !Type %in% c("Sour","Lactose"),
+     -79.99681 <= lon & lon <= -79.74188,
+     43.25631 <= lat & lat <=  43.26400
+   )
+   %>% mutate(
+     ## drops unused levels, mitigates downstream errors
+     Type = fct_drop(Type), 
+     Type = fct_relevel(Type,
+                           c("Sour","Lactose")
+     )
+   )
+  )
+
+beer_map2 <- get_stamenmap(get_mapzone(ham_beer), maptype="toner-lite",
+                              zoom=11,messaging=FALSE)
+(ggmap(beer_map2)
+  + geom_point(data = ham_beer, colour = "red",size = 2, alpha=.3)
+)  
+```
+
+This code worked at 4 am on Thursday night. Suddenly I am having an error. It is more so to be a general idea of plotting the brewery locations filtered by the type of beer you like. 
+
+Now we can facet our breweries by beer type so if you only like one type of beer, you can do a little trip and see which breweries are near eachother for each beer type. 
+
+```{map4}
+multi_beer<- (ggmap(beer_map2,darken=c(0.9,"white")) 
+  + geom_point(data = ham_beer, aes(colour = Type, size=Type))
+  + facet_wrap(~ Type)
+  + scale_colour_brewer(palette="Paired")
+  + theme(legend.position="none")
+)
+
+multi_beer
+
+```
+
+I apologize for the very bad assignment it was a terrible week. This is something I will continue to work on because I am interested in the topic and I find it cool.
+Sorry again.
