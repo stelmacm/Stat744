@@ -5,6 +5,8 @@ date: "08/11/2019"
 output: html_document
 ---
 
+**BMB: did you mean to name this file "Hrmwk5" rather than "hmwrk5"? (your naming convention is all over the place: hw2, hrmwk3, Hwrk4, homework4 ... it's kind of obsessive of me to notice, but consistency is useful when working with data/code organization ...**
+
 ```{r setup}
 library(ggmap)
 library(tidyverse)
@@ -22,20 +24,20 @@ if (!require(transformr,quietly=TRUE)) {
 library(leaflet)
 
 library(plotly)
-#definitely more packages than needed
+#definitely more packages than needed ## BMB: :-)
 ```
 
 ## General Idea
 
-I begin by apologized for this incomplete effort as it was an incredibly terrible week this week.
-That being said I spent the majority of the week working which means a good supply of bean juice from one of my favorite coffee shops, Phin coffee. They are a real coffee shop that actually sells flavoured coffee instead of coffee with some sort of sugar flavoring. While in there I noticed this interesting graphic,
-https://www.google.com/maps/uv?hl=en&pb=!1s0x882c9b7c4025ac89%3A0xb0984057f0dc98d4!3m1!7e115!4shttps%3A%2F%2Flh5.googleusercontent.com%2Fp%2FAF1QipPSP1YtFZvvv2ps3oUMn6pryhlmf2TCSQK0np8u%3Dw106-h160-k-no!5sphin%20coffee%20-%20Google%20Search!15sCAQ&imagekey=!1e10!2sAF1QipOt0HjbNl6cpwxyvarpWjc9-IKvlcCLmmdImkce&sa=X&ved=2ahUKEwj5nuHertnlAhVnhq0KHarjB9YQoiowI3oECAoQBg 
-This graphic shows different flavor profiles for coffee's as a sunburst plot. I thought this was really cool and thought it was cool how the staff work with it to find a bean that you like. (This isn't an ad I swear).
+I begin by apologizing for this incomplete effort as it was an incredibly terrible week this week.
+That being said I spent the majority of the week working, which means a good supply of bean juice from one of my favorite coffee shops, Phin coffee. They are a real coffee shop that actually sells flavoured coffee instead of coffee with some sort of sugar flavoring. While in there I noticed [this interesting graphic](https://www.google.com/maps/uv?hl=en&pb=!1s0x882c9b7c4025ac89%3A0xb0984057f0dc98d4!3m1!7e115!4shttps%3A%2F%2Flh5.googleusercontent.com%2Fp%2FAF1QipPSP1YtFZvvv2ps3oUMn6pryhlmf2TCSQK0np8u%3Dw106-h160-k-no!5sphin%20coffee%20-%20Google%20Search!15sCAQ&imagekey=!1e10!2sAF1QipOt0HjbNl6cpwxyvarpWjc9-IKvlcCLmmdImkce&sa=X&ved=2ahUKEwj5nuHertnlAhVnhq0KHarjB9YQoiowI3oECAoQBg )
+This graphic shows different flavor profiles for coffees as a sunburst plot. I thought this was really cool and thought it was cool how the staff work with it to find a bean that you like. (This isn't an ad I swear).
 
 I thought this could be a good method to solve mankind's longest problem; people dont know what they want.
 
 I thought a good problem that was kind of similar to coffee was figuring out what kind of drink you like and where you can get it. I began by creating a sunplot of types of flavor profiles of beers. 
 
+**BMB: this is good, but where did the data come from,  and is there any way to read it in from a file rather than hard-coding it in your R script?**
 
 ```{r cars}
 df <- data.frame(
@@ -68,9 +70,6 @@ df <- data.frame(
     "Mouthfeel", "Body", "Foam",
     "In The Palms",
     "Berry Good","Small Hours", "Drift"
-    
-    
-   
   ),
   parents = c(
     "", "", "", "", "", "", "", "", "" ,
@@ -96,6 +95,7 @@ Again this was fairly late so it is not fully complete, I would have liked to ad
 graph <- plot_ly(df, ids = ~ids, labels = ~labels, parents = ~parents, type = 'sunburst',maxdepth = 2)
 graph
 ```
+**BMB: this is cool (although the tooltips are redundant/useless)**
 
 #Further Idea
 
@@ -119,7 +119,9 @@ companies <- data.frame(
 
 Unfortunately there is no data set for this. There is a beerworld API however it does not contain everything I would have wanted. So I just made a data frame. Again its very late so there is not much in it but the idea still holds (kinda). This data frame would also need alot more variables in it with regards to the path taken to getting to a given drink.
 
-```{map1}
+**BMB: you might be able to scrape/reverse geocode this ...**
+
+```{r map1}
 map1 <- qmplot(lon, lat, data = companies, 
                maptype = "toner-lite",
                ## for q* plots need to use I() for direct specifications
@@ -132,7 +134,7 @@ map1
 
 Similarly to what was done in class, a plot of locations is made with all the breweries in Hamilton and from there you can get a rough estimate of where there are close ones so you can just walk from one place to the other or some other visualization. 
 
-```{map2}
+```{r map2}
 get_mapzone <- function(data, latcol="lat", loncol="lon") {
   lon <- na.omit(data[[loncol]])
   lat <- na.omit(data[[latcol]])
@@ -152,22 +154,23 @@ beer_map1 <- get_stamenmap(beerarea,zoom=13, maptype="toner-lite",
 
 This produces a simple map based on the boundaries of the points which is obviously unideal because we would like to see the area around our points. Below I will filter for Sour beers near McMaster. 
 
-
-```{map3}
+**BMB: try to filter by "within dx, dy of McMaster lat/lon" rather than hard-coding boundaries?**
+```{r map3}
 ham_beer <-
   (companies
-   %>% filter(
-     !Type %in% c("Sour","Lactose"),
-     -79.99681 <= lon & lon <= -79.74188,
-     43.25631 <= lat & lat <=  43.26400
-   )
-   %>% mutate(
-     ## drops unused levels, mitigates downstream errors
-     Type = fct_drop(Type), 
-     Type = fct_relevel(Type,
-                           c("Sour","Lactose")
-     )
-   )
+    %>% filter(
+          ## BMB: took out a ! (not)
+         Type %in% c("Sour","Lactose"),
+         -79.99681 <= lon & lon <= -79.74188,
+         43.25631 <= lat & lat <=  43.26400
+       )
+    %>% mutate(
+          ## drops unused levels, mitigates downstream errors
+          Type = fct_drop(Type), 
+          Type = fct_relevel(Type,
+                             c("Sour","Lactose")
+                             )
+        )
   )
 
 beer_map2 <- get_stamenmap(get_mapzone(ham_beer), maptype="toner-lite",
@@ -181,7 +184,7 @@ This code worked at 4 am on Thursday night. Suddenly I am having an error. It is
 
 Now we can facet our breweries by beer type so if you only like one type of beer, you can do a little trip and see which breweries are near eachother for each beer type. 
 
-```{map4}
+```{r map4}
 multi_beer<- (ggmap(beer_map2,darken=c(0.9,"white")) 
   + geom_point(data = ham_beer, aes(colour = Type, size=Type))
   + facet_wrap(~ Type)
@@ -195,3 +198,5 @@ multi_beer
 
 I apologize for the very bad assignment it was a terrible week. This is something I will continue to work on because I am interested in the topic and I find it cool.
 Sorry again.
+
+**BMB: no problem, this is at the very least an adequate solution to the problem we gave you: score 2**
